@@ -15,7 +15,7 @@ export default function Home() {
       const userId = 1 // TODO: replace 1 with actual userId value
       // TODO: if user exists, see if userId exists in either Donor or Staff table
       const callSuccess = 200 // response code of api calls
-      const userType = "Donor" 
+      const userType = "Staff" 
       if (callSuccess === 200 && userType === "Donor")
       {
         router.push(`/donor?data=${userId}`)

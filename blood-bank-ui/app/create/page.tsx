@@ -14,8 +14,7 @@ export default function CreateUser() {
   const [jobTitle, setJobTitle] = useState("")
   const [errorMsg, setErrorMsg] = useState("")
 
-
-  
+  // Function for admin ? checkbox
   function Checkbox() {
     const handleCheckbox = () => {
       setIsStaff(!isStaff)
@@ -26,10 +25,11 @@ export default function CreateUser() {
     </div>
   }
 
+  // function for create user submission
   function Submit() {
     const router = useRouter()
     const handleSubmit = () => {
-      // TODO: create new user with the following params
+      // TODO: do POST request to create new user with the following params
       // email
       // username
       // password
@@ -44,13 +44,13 @@ export default function CreateUser() {
       else {
         setErrorMsg("Wrong, do it again")
       }
-
     }
     return <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition" onClick={handleSubmit}>
             Submit
           </button>
   }
 
+  // function to create dropdown for blood type
   function BloodDropdown() {
 
     const options = [
@@ -78,6 +78,7 @@ export default function CreateUser() {
     );
   }
 
+  // function to create input for birthday
   function BirthdayInput() {    
     // Restrict to past dates only for DOB
     const today = new Date().toISOString().split("T")[0];

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 
 export default function StaffPage() {
-  const [appointmentID, setAppointmentId] = useState(-1)
+  const [appointmentID, setAppointmentId] = useState(-1) // containes the value of appointment to be updated
   const [bloodType, setBloodType] = useState("")
   const [bloodSubmit, setBloodSubmit] = useState(0)
   const [username, setUsername] = useState("") 
@@ -13,33 +13,24 @@ export default function StaffPage() {
   const searchParams = useSearchParams();
   const userId = searchParams.get('data')
 
-  // Appt completer button
-  function ApptComp() {
-    const handleAttpComp = () =>
-    {
-      console.log(appointmentID)
-    }
-    return <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition" onClick={handleAttpComp}>Complete</button>
+  // initialize and display user details
+  function UserDetails() {
+    useEffect(() => {
+      // TODO: utalize the userId to perform a GET call on the Users/Donors table to fill out the following:
+      setUsername("defUser")
+      setEmail("defEmail")
+      setJobTitle("defJob")
+  
+    }, []);
+    return <div>
+      <p className="dark:text-gray-300">User Id: {userId}</p>
+      <p className="dark:text-gray-300">Username: {username}</p>
+      <p className="dark:text-gray-300">Email: {email}</p>
+      <p className="dark:text-gray-300">Job Title: {jobTitle}</p>
+    </div>
   }
 
-  // Appt canceller button
-  function ApptCancel() {
-    const handleAttpCancel = () =>
-    {
-      console.log(appointmentID)
-    }
-    return <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition" onClick={handleAttpCancel}>Cancel</button>
-  }
-
-  // Blood checker button
-  function FindBlood() {
-    const handleBloodSubmit = () => {
-      setBloodSubmit(bloodSubmit + 1)
-      console.log(bloodType)
-    }
-    return <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition" onClick={handleBloodSubmit}>Find</button>
-  }
-
+  // Initialize and display appointments
   function ApptList() {
     const [apptList, setAppList] = useState([]);
 
@@ -80,11 +71,42 @@ export default function StaffPage() {
     );
   }
 
+  // Appt completer button
+  function ApptComp() {
+    const handleAttpComp = () =>
+    {
+      // TODO: perform an UPDATE on Appointments table, given the appointmentID, change the corresponding appointment status to "complete"
+      console.log(appointmentID)
+    }
+    return <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition" onClick={handleAttpComp}>Complete</button>
+  }
+
+  // Appt canceller button
+  function ApptCancel() {
+    const handleAttpCancel = () =>
+    {
+      // TODO: perform an UPDATE on Appointments table, given the appointmentID, change the corresponding appointment status to "cancelled"
+      console.log(appointmentID)
+    }
+    return <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition" onClick={handleAttpCancel}>Cancel</button>
+  }
+
+  // Blood checker button
+  function FindBlood() {
+    const handleBloodSubmit = () => {
+      setBloodSubmit(bloodSubmit + 1)
+      console.log(bloodType)
+    }
+    return <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition" onClick={handleBloodSubmit}>Find</button>
+  }
+
+  // Find and display all blood elements after blood type has been submitted
   function BloodList() {
     const [bloodList, setBloodList] = useState([]);
 
     useEffect(() => {
-      // TODO: a GET call is needed here to fill the following list with all the staff's appointments
+      // TODO: a GET call is needed here to fill the following list with all the blood entries
+      // 'bloodType' containes the blood type that needs to be searched
       const tempList = [
         {
           appointmentID: 1,
@@ -122,21 +144,11 @@ export default function StaffPage() {
       </ul>
     );
   }
-  // initialize user details
-  useEffect(() => {
-    // TODO: utalize the userId to perform a GET call on the Users/Donors table to fill out the following:
-    setUsername("defUser")
-    setEmail("defEmail")
-    setJobTitle("defJob")
 
-  }, []);
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black gap-3">
       <h1 className="text-2xl font-bold dark:text-white">Staff page</h1>
-      <p className="dark:text-gray-300">User Id: {userId}</p>
-      <p className="dark:text-gray-300">Username: {username}</p>
-      <p className="dark:text-gray-300">Email: {email}</p>
-      <p className="dark:text-gray-300">Job Title: {jobTitle}</p>
+      <UserDetails />
       <h1 className="text-2xl font-bold dark:text-white">Appointments</h1>
       <ApptList />
       {/* Appointment Completer */}
