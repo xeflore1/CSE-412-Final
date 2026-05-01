@@ -1,6 +1,6 @@
 'use client'
 import Link from "next/link";
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from "react";
 
 
@@ -55,16 +55,24 @@ export default function DonorPage() {
       </ul>
     </div>
   }
+
+  // Button that redirects to update info page
+  function UpdatePageButton() {
+    const router = useRouter()
+    const handleRedirect = async () => {
+      router.push(`/update?data=${userId}`)
+    }
+    return <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition" onClick={handleRedirect}>
+          Update Info
+        </button>
+  }
+
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black gap-3">
       <h1 className="text-2xl font-bold dark:text-white">Donor Page</h1>
       <UserDetails />
       <ApptList />
-      <Link href="/update">
-        <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition">
-          Update Info
-        </button>
-      </Link>
+      <UpdatePageButton />
       <Link href="/">
         <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition">
           Back
