@@ -149,7 +149,7 @@ export default function StaffPage() {
   function UpdatePageButton() {
     const router = useRouter()
     const handleRedirect = async () => {
-      router.push(`/update?data=${userId}`)
+      router.push(`/update?id=${userId}&staff=true`)
     }
     return <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition" onClick={handleRedirect}>
           Update Info

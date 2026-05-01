@@ -33,9 +33,14 @@ export default function CreateUser() {
       // email
       // username
       // password
-      // isStaff: 
-      //   true -> jobTitle, 
-      //   false -> bloodType, dob
+      if (isStaff) // staff member
+      {
+        // jobTitle
+      }
+      else // donor
+      {
+        // bloodType, dob
+      }
       const responseCode = 200
       if (responseCode === 200)
       {
