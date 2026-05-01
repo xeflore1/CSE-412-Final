@@ -1,5 +1,6 @@
 'use client';
 import Link from "next/link";
+import axios from "axios"; 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react';
 
@@ -12,17 +13,30 @@ export default function Home() {
 
     const handleLogin = async () => {
       // TODO: call api so see if user with username and password credentials is valid
-      const userId = 1 // TODO: replace 1 with actual userId value
-      // TODO: if user exists, see if userId exists in either Donor or Staff table
-      const callSuccess = 200 // response code of api calls
-      const userType = "Staff" 
-      if (callSuccess === 200 && userType === "Donor")
-      {
-        router.push(`/donor?data=${userId}`)
+      try {
+        // this is an example of how can api call can be done
+        // const response = await axios.get(
+        //   "http://127.0.0.1:5000/login",
+        //   {
+        //     username,
+        //     password,
+        //   }
+        // );
+        const userId = 1 // TODO: replace 1 with actual userId value
+        // TODO: if user exists, see if userId exists in either Donor or Staff table
+        const callSuccess = 200 // response code of api calls
+        const userType = "Staff" 
+        if (callSuccess === 200 && userType === "Donor")
+        {
+          router.push(`/donor?data=${userId}`)
+        }
+        else if (callSuccess === 200 && userType === "Staff")
+        {
+          router.push(`/staff?data=${userId}`)
+        }
       }
-      else if (callSuccess === 200 && userType === "Staff")
-      {
-        router.push(`/staff?data=${userId}`)
+      catch (error) {
+        console.error("login failed:", error)
       }
     }
     return <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition" onClick={handleLogin}>
