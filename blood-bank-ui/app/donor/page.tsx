@@ -1,4 +1,5 @@
 'use client'
+import axios from "axios"; 
 import Link from "next/link";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from "react";
@@ -14,13 +15,22 @@ export default function DonorPage() {
 
   function UserDetails() {
     useEffect(() => {
-      // TODO: utalize userId to perform a GET call on the Users/Donors table to fill out the following:
-      setUsername("defUser")
-      setEmail("defEmail")
-      setBloodType("defBlood")
-      setDob("defDob")
-  
-    }, []);
+      // Call the get donor info api
+      const fetchUser = async () => {
+        try {
+          const res = await axios.get(`http://127.0.0.1:5000/donor/${userId}`);
+          
+          setUsername(res.data.username);
+          setEmail(res.data.email);
+          setBloodType(res.data.bloodType);
+          setDob(res.data.dob);
+
+        } catch (err) {
+          console.error(err);
+        }
+      };
+      if (userId) fetchUser();
+    }, [userId]);
     return <div>
       <p className="dark:text-gray-300">User Id: {userId}</p>
       <p className="dark:text-gray-300">Username: {username}</p>
