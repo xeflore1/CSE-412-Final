@@ -368,7 +368,6 @@ def update_appt(appointmentId):
         date = data.get("date")
         status = data.get("status")
 
-
         valid_statuses = ("ongoing", "completed", "cancelled")
         if status is not None and status not in valid_statuses:
             return jsonify({"error": f"Invalid status. Must be one of: {valid_statuses}"}), 400
@@ -376,6 +375,21 @@ def update_appt(appointmentId):
         conn = get_db_conn()
         cur = conn.cursor()
 
+        # Retrieve current appointment details (to check previous status)
+        cur.execute(
+            "SELECT status, donorid FROM appointments WHERE appointmentid = %s",
+            (appointmentId,)
+        )
+        appt = cur.fetchone()
+        if not appt:
+            cur.close()
+            conn.close()
+            return jsonify({"error": "Appointment not found"}), 404
+
+        old_status = appt[0]
+        donor_id = appt[1]
+
+        # Build dynamic update
         set_clauses = []
         params = []
         if date is not None:
@@ -385,16 +399,37 @@ def update_appt(appointmentId):
             set_clauses.append("status = %s")
             params.append(status)
 
-        if not set_clauses:
-            return jsonify({"error": "No fields to update"}), 400
+        if set_clauses:
+            params.append(appointmentId)
+            query = f"UPDATE appointments SET {', '.join(set_clauses)} WHERE appointmentid = %s"
+            cur.execute(query, params)
 
-        params.append(appointmentId)
-        query = f"UPDATE appointments SET {', '.join(set_clauses)} WHERE appointmentid = %s"
-        print(f"Executing: {query} with params {params}")  # DEBUG
+        # If status changed to completed (and wasn't already completed), create blood unit
+        if status == "completed" and old_status != "completed":
+            # Check if blood unit already exists for this appointment
+            cur.execute(
+                "SELECT unitid FROM bloodunits WHERE appointmentid = %s",
+                (appointmentId,)
+            )
+            if not cur.fetchone():
+                # Get donor's blood type
+                cur.execute(
+                    "SELECT bloodtype FROM donors WHERE userid = %s",
+                    (donor_id,)
+                )
+                blood_type = cur.fetchone()[0]
 
-        cur.execute(query, params)
-        rowcount = cur.rowcount
-        print(f"Rows affected: {rowcount}")  # DEBUG
+                # Get next unit ID
+                cur.execute("SELECT COALESCE(MAX(unitid), 0) + 1 FROM bloodunits")
+                new_unit_id = cur.fetchone()[0]
+
+                # Insert blood unit
+                cur.execute(
+                    """INSERT INTO bloodunits
+                       (unitid, appointmentid, bloodtype, volume_ml, isavailable, datedrawn)
+                       VALUES (%s, %s, %s, 500, TRUE, CURRENT_DATE)""",
+                    (new_unit_id, appointmentId, blood_type)
+                )
 
         conn.commit()
         cur.close()
@@ -484,6 +519,67 @@ def create_appointment():
             conn.rollback()
             conn.close()
         return jsonify({"error": "Appointment creation failed"}), 500
+
+@app.route("/bloodunits", methods=["POST"])
+def create_blood_unit():
+    try:
+        data = request.get_json()
+        appointment_id = data.get("appointmentId")
+        volume_ml = data.get("volumeMl")
+
+        if not appointment_id or not volume_ml:
+            return jsonify({"error": "Appointment ID and volume are required."}), 400
+
+        conn = get_db_conn()
+        cur = conn.cursor()
+
+        # Verify appointment exists and is completed
+        cur.execute(
+            "SELECT donorid, status FROM appointments WHERE appointmentid = %s",
+            (appointment_id,)
+        )
+        appt = cur.fetchone()
+        if not appt:
+            cur.close()
+            conn.close()
+            return jsonify({"error": "Appointment not found"}), 404
+
+        donor_id, status = appt
+        if status != "completed":
+            cur.close()
+            conn.close()
+            return jsonify({"error": "Appointment must be completed to create a blood pack."}), 400
+
+        # Get donor's blood type automatically
+        cur.execute("SELECT bloodtype FROM donors WHERE userid = %s", (donor_id,))
+        blood_type = cur.fetchone()[0]
+
+        # Next unit ID
+        cur.execute("SELECT COALESCE(MAX(unitid), 0) + 1 FROM bloodunits")
+        new_unit_id = cur.fetchone()[0]
+
+        notes = data.get("notes")
+
+        cur.execute(
+            """INSERT INTO bloodunits
+               (unitid, appointmentid, bloodtype, volume_ml, isavailable, datedrawn, notes)
+               VALUES (%s, %s, %s, %s, TRUE, CURRENT_DATE, %s)""",
+            (new_unit_id, appointment_id, blood_type, volume_ml, notes)
+        )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({"unitId": new_unit_id, "bloodType": blood_type}), 201
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        if 'conn' in locals():
+            conn.rollback()
+            conn.close()
+        return jsonify({"error": "Failed to create blood unit"}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)

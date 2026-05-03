@@ -210,6 +210,11 @@ function ApptCancel() {
       <div className="flex items-center justify-center gap-4">
         <input className="text-center border-2 border-blue-600 rounded" type="text" placeholder="Blood Type" onChange={(e) => setBloodType(e.target.value)}></input>
         <FindBlood />
+        <Link href="/staff/blood/create">
+        <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+          Create Blood Pack
+        </button>
+      </Link>
       </div>
       {/* If blood type has been submitted, render its list */}
       {bloodSubmit > 0 ? 
@@ -223,6 +228,8 @@ function ApptCancel() {
           Back
         </button>
       </Link>
+      
     </div>
+    
   );
 }
