@@ -9,11 +9,13 @@ import { useState } from 'react';
 export default function Home() {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
+  const [errorMsg, setErrorMsg] = useState("");
   const router = useRouter()
 
   const handleLogin = async () => {
     try {
       // send the username, and password to the API call in the flask backend
+      setErrorMsg("");
       const response = await axios.post(
         "http://127.0.0.1:5000/login",
         {
@@ -25,14 +27,31 @@ export default function Home() {
       // get the response data
       const { userId, userType } = response.data;
 
+      // route users to either donor or staff depending on who they were determined by the API
       if (userType === "Donor") {
         router.push(`/donor?data=${userId}`)
-      } else if (userType === "Staff") {
+      } 
+      else if (userType === "Staff") {
         router.push(`/staff?data=${userId}`)
       }
 
-    } catch (error) {
-      console.error("login failed:", error)
+      }
+      // error in processing requests like maybe user didn't put any credentials
+      catch (error) {
+        const err = error as any; // cast the error so we don't get typing issues
+        if (err.response) {
+        // 401 authentication error
+          if (err.response.status === 401) {
+            setErrorMsg("Invalid username or password");
+          } 
+          else { // other issue
+            setErrorMsg(err.response.data.error || "Something went wrong");
+          }
+        } 
+        else {
+        // server not reachable so prob like 500 error
+        setErrorMsg("Cannot connect to server");
+        }
     }
   }
 
@@ -54,6 +73,10 @@ export default function Home() {
           placeholder="Password"
           onChange={e => setPassword(e.target.value)}
         />
+
+        {errorMsg && (
+          <p className="text-red-500 text-sm">{errorMsg}</p>
+        )}
 
         <button
           onClick={handleLogin}
