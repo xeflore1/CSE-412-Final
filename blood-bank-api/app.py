@@ -549,19 +549,17 @@ def create_blood_unit():
         cur.execute("SELECT bloodtype FROM donors WHERE userid = %s", (donor_id,))
         blood_type = cur.fetchone()[0]
 
-        # Next unit ID
-        cur.execute("SELECT COALESCE(MAX(unitid), 0) + 1 FROM bloodunits")
-        new_unit_id = cur.fetchone()[0]
-
         notes = data.get("notes")
 
         cur.execute(
             """INSERT INTO bloodunits
-               (unitid, appointmentid, bloodtype, volume_ml, isavailable, datedrawn, notes)
-               VALUES (%s, %s, %s, %s, TRUE, CURRENT_DATE, %s)""",
-            (new_unit_id, appointment_id, blood_type, volume_ml, notes)
+               (appointmentid, bloodtype, volume_ml, isavailable, datedrawn, notes)
+               VALUES (%s, %s, %s, TRUE, CURRENT_DATE, %s)
+               RETURNING unitid;
+               """,
+            (appointment_id, blood_type, volume_ml, notes)
         )
-
+        new_unit_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
         conn.close()
