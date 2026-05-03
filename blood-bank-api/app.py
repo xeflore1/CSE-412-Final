@@ -6,6 +6,7 @@ from flask_cors import CORS
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 import psycopg2
+from datetime import datetime
 
 ph = PasswordHasher()
 app = Flask(__name__)
@@ -23,7 +24,7 @@ def get_db_conn():
         host="localhost",
         database="bloodbank_412_PROJECT",
         user="postgres",
-        password="Jfort1nite!",
+        password="cse412",
         port="5432"
     )
     return conn
@@ -364,7 +365,6 @@ def update_staff(userId):
 def update_appt(appointmentId):
     try:
         data = request.get_json()
-        date = data.get("date")
         status = data.get("status")
 
         conn = get_db_conn()
@@ -372,10 +372,9 @@ def update_appt(appointmentId):
 
         cur.execute("""
             UPDATE appointments
-            SET dateofappt = %s,
-                status = %s
+            SET status = %s
             WHERE appointmentid = %s;
-        """, (date, status, appointmentId))
+        """, (status, appointmentId))
 
         conn.commit()
         cur.close()
@@ -395,10 +394,6 @@ def delete_user(userId):
         conn = get_db_conn()
         cur = conn.cursor()
 
-        # Delete dependent records first
-        cur.execute("DELETE FROM donors WHERE userid = %s;", (userId,))
-        cur.execute("DELETE FROM hospitalstaff WHERE userid = %s;", (userId,))
-
         # Then delete user
         cur.execute("DELETE FROM users WHERE userid = %s;", (userId,))
 
@@ -413,6 +408,42 @@ def delete_user(userId):
             conn.rollback()
             conn.close()
         return jsonify({"error": "Delete failed"}), 500
+
+@app.route("/appts/<int:donorId>", methods=["POST"])    
+def create_appointment(donorId):
+    data = request.get_json()
+    date = data["date"]
+
+    # Early returns if date is invalid.
+    if not date:
+        return jsonify({"error": "No date supplied."}), 400
+    
+    if datetime.strptime(date, "%Y-%m-%d").date() < datetime.today().date():
+        return jsonify({"error": "Can't request an appointment in the past."}), 400
+    try:
+        # Assign an appointment to a random staff member for now.
+        conn = get_db_conn()
+        cur = conn.cursor()
+        insert_appt_query = """
+        INSERT INTO appointments (donorid, staffid, dateofappt, status)
+        SELECT %s, userid, %s, %s
+        FROM hospitalstaff
+        ORDER BY RANDOM()
+        LIMIT 1;
+        """
+        cur.execute(insert_appt_query, (donorId, date, "ongoing"))
+        if cur.rowcount == 0:
+            conn.rollback()
+            return jsonify({"error": "No staff available"}), 400
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"message": "Appointment made."}), 200
+    except Exception as e:
+        if 'conn' in locals():
+            conn.rollback()
+            conn.close()
+        return jsonify({"error": "Appointment request failed."}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)

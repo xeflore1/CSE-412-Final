@@ -13,6 +13,7 @@ export default function StaffPage() {
   const [username, setUsername] = useState("") 
   const [email, setEmail] = useState("")
   const [jobTitle, setJobTitle] = useState("")
+  const [errorMsg, setErrorMsg] = useState("")
   const searchParams = useSearchParams();
   const userId = searchParams.get('data')
 
@@ -81,13 +82,21 @@ export default function StaffPage() {
   function ApptComp() {
     const handleAttpComp = async () =>
     {
+      if (appointmentID <= 0) {
+        setErrorMsg("Please enter a valid appointment ID");
+        return;
+      }
       try {
         await axios.put(`http://127.0.0.1:5000/appts/${appointmentID}`, {
-        status: "complete"
+        status: "completed"
       });
       alert("Appointment marked complete");
-      } catch (err) {
-        console.error(err);
+      } catch (error) {
+        const err = error as any; // cast the error so we don't get typing issues
+        if (err.response)
+        {
+          setErrorMsg(err.response.data.error || "Something went wrong");
+        }
       }
     }
     return <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition" onClick={handleAttpComp}>Complete</button>
@@ -97,13 +106,21 @@ export default function StaffPage() {
   function ApptCancel() {
     const handleAttpCancel = async () =>
     {
+      if (appointmentID <= 0) {
+        setErrorMsg("Please enter a valid appointment ID");
+        return;
+      }
       try {
         await axios.put(`http://127.0.0.1:5000/appts/${appointmentID}`, {
           status: "cancelled"
         });
         alert("Appointment cancelled");
-      } catch (err) {
-        console.error(err);
+      } catch (error) {
+          const err = error as any; // cast the error so we don't get typing issues
+          if (err.response)
+          {
+            setErrorMsg(err.response.data.error || "Something went wrong");
+          }
       }
     }
     return <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition" onClick={handleAttpCancel}>Cancel</button>
@@ -187,6 +204,9 @@ export default function StaffPage() {
         <ApptComp />
         <ApptCancel />
       </div>
+        {errorMsg && (
+          <p className="text-red-500 text-sm">{errorMsg}</p>
+        )}
       {/* Blood Finder */}
       <div className="flex items-center justify-center gap-4">
         <input className="text-center border-2 border-blue-600 rounded" type="text" placeholder="Blood Type" onChange={(e) => setBloodType(e.target.value)}></input>

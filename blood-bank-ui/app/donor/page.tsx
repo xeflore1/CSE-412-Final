@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 export default function DonorPage() {
   const searchParams = useSearchParams();
   const userId = searchParams.get('data')
+  const [errorMsg, setErrorMsg] = useState("")
   const [username, setUsername] = useState("")
   const [email, setEmail] = useState("")
   const [bloodType, setBloodType] = useState("")
@@ -79,10 +80,19 @@ export default function DonorPage() {
   // Create Appointment form
   function CreateAppointment() {
     const [apptDate, setApptDate] = useState(""); // this will hold the date of the requested appointment
-    const handleApptCreate = () => {
-      // TODO: make a POST request to create an appointment
-      // apptDate contains the selected date value
-      console.log(apptDate)
+    const handleApptCreate = async () => {
+        try {
+          await axios.post(`http://127.0.0.1:5000/appts/${userId}`, {
+            date: apptDate
+          });
+          alert("Appointment created.");
+        } catch (error) {
+            const err = error as any; // cast the error so we don't get typing issues
+            if (err.response)
+            {
+              setErrorMsg(err.response.data.error || "Something went wrong");
+            }
+        }
       // userId can be used to get the donors info
     }
     return <div className="flex flex-col items-center justify-center gap-3">
@@ -97,6 +107,9 @@ export default function DonorPage() {
       <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition" onClick={handleApptCreate}>
         Create Appointment
       </button>
+        {errorMsg && (
+          <p className="text-red-500 text-sm">{errorMsg}</p>
+        )}
     </div>
   }
 
