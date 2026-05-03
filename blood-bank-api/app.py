@@ -160,7 +160,7 @@ def login():
         elif staff_id:
             user_type = "Staff"
         else:
-            # User exists but is neither donor nor staff (shouldn't happen in your schema)
+            # User exists but is neither donor nor staff
             return jsonify({"error": "User role not found"}), 500
 
         return jsonify({
