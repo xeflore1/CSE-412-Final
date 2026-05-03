@@ -459,15 +459,13 @@ def create_appointment():
 
         staff_id = staff[0]
 
-        # Get the next appointment ID (since you're not using SERIAL)
-        cur.execute("SELECT COALESCE(MAX(appointmentid), 0) + 1 FROM appointments")
-        new_id = cur.fetchone()[0]
-
         cur.execute(
-            "INSERT INTO appointments (appointmentid, donorid, staffid, dateofappt, status) VALUES (%s, %s, %s, %s, 'ongoing')",
-            (new_id, donor_id, staff_id, date)
+            "INSERT INTO appointments (donorid, staffid, dateofappt, status) " \
+            "VALUES (%s, %s, %s, 'ongoing')"
+            "RETURNING appointmentid;",
+            (donor_id, staff_id, date)
         )
-
+        new_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
         conn.close()
