@@ -5,11 +5,14 @@ from argon2 import PasswordHasher
 
 DB_HOST = "localhost"
 DB_NAME = "bloodbank_412_PROJECT"
+DB_USER="postgres"
+DB_PASS="cse412"
+DB_PORT="5432"
 
 ph = PasswordHasher()
 
 print("Connecting to database...")
-conn = psycopg2.connect(host=DB_HOST, database=DB_NAME)
+conn = psycopg2.connect(host=DB_HOST, database=DB_NAME, user=DB_USER, password=DB_PASS, port=DB_PORT)
 conn.autocommit = False
 cur = conn.cursor()
 
@@ -51,9 +54,8 @@ try:
     # Appointments
     print("Inserting appointments...")
     cur.execute("""
-        INSERT INTO Appointments (appointmentID, donorID, staffID, dateOfAppt, status)
+        INSERT INTO Appointments (donorID, staffID, dateOfAppt, status)
         SELECT 
-            i,
             i,
             floor(random() * 25 + 26)::INTEGER,
             '2020-01-01'::DATE + (random() * 2000)::INTEGER,
@@ -65,9 +67,8 @@ try:
     # Blood Units
     print("Inserting blood units...")
     cur.execute("""
-        INSERT INTO BloodUnits (unitID, appointmentID, bloodType, volume_ml, isAvailable, dateDrawn)
+        INSERT INTO BloodUnits (appointmentID, bloodType, volume_ml, isAvailable, dateDrawn)
         SELECT
-            row_number() OVER () AS unitID,
             a.appointmentID,
             d.bloodType,
             (random() * 200 + 400)::NUMERIC(7,3),

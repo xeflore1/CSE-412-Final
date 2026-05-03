@@ -13,6 +13,7 @@ export default function StaffPage() {
   const [username, setUsername] = useState("") 
   const [email, setEmail] = useState("")
   const [jobTitle, setJobTitle] = useState("")
+  const [errorMsg, setErrorMsg] = useState("")
   const searchParams = useSearchParams();
   const userId = searchParams.get('data')
   const [refreshCount, setRefreshCount] = useState(0);
@@ -206,6 +207,9 @@ function ApptCancel() {
         <ApptComp />
         <ApptCancel />
       </div>
+        {errorMsg && (
+          <p className="text-red-500 text-sm">{errorMsg}</p>
+        )}
       {/* Blood Finder */}
       <div className="flex items-center justify-center gap-4">
         <input className="text-center border-2 border-blue-600 rounded" type="text" placeholder="Blood Type" onChange={(e) => setBloodType(e.target.value)}></input>

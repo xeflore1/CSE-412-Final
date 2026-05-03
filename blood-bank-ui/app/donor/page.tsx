@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 export default function DonorPage() {
   const searchParams = useSearchParams();
   const userId = searchParams.get('data')
+  const [errorMsg, setErrorMsg] = useState("")
   const [username, setUsername] = useState("")
   const [email, setEmail] = useState("")
   const [bloodType, setBloodType] = useState("")

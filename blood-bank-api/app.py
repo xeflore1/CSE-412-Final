@@ -6,6 +6,7 @@ from flask_cors import CORS
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 import psycopg2
+from datetime import datetime
 
 ph = PasswordHasher()
 app = Flask(__name__)
@@ -23,7 +24,7 @@ def get_db_conn():
         host="localhost",
         database="bloodbank_412_PROJECT",
         user="postgres",
-        password="cse412!",
+        password="cse412",
         port="5432"
     )
     return conn
@@ -451,10 +452,6 @@ def delete_user(userId):
         conn = get_db_conn()
         cur = conn.cursor()
 
-        # Delete dependent records first
-        cur.execute("DELETE FROM donors WHERE userid = %s;", (userId,))
-        cur.execute("DELETE FROM hospitalstaff WHERE userid = %s;", (userId,))
-
         # Then delete user
         cur.execute("DELETE FROM users WHERE userid = %s;", (userId,))
 
@@ -497,15 +494,13 @@ def create_appointment():
 
         staff_id = staff[0]
 
-        # Get the next appointment ID (since you're not using SERIAL)
-        cur.execute("SELECT COALESCE(MAX(appointmentid), 0) + 1 FROM appointments")
-        new_id = cur.fetchone()[0]
-
         cur.execute(
-            "INSERT INTO appointments (appointmentid, donorid, staffid, dateofappt, status) VALUES (%s, %s, %s, %s, 'ongoing')",
-            (new_id, donor_id, staff_id, date)
+            "INSERT INTO appointments (donorid, staffid, dateofappt, status) " \
+            "VALUES (%s, %s, %s, 'ongoing')"
+            "RETURNING appointmentid;",
+            (donor_id, staff_id, date)
         )
-
+        new_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
         conn.close()

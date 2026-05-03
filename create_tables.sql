@@ -27,15 +27,15 @@ CREATE TABLE Hospitalstaff (
 CREATE TYPE aptStatus AS ENUM ('ongoing', 'completed', 'cancelled');
 
 CREATE TABLE Appointments (
-    appointmentID INTEGER PRIMARY KEY, 
-    donorID INTEGER references Donors (userID) NOT NULL, 
-    staffID INTEGER references Hospitalstaff (userID) NOT NULL, 
+    appointmentID INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, 
+    donorID INTEGER references Donors (userID) ON DELETE SET NULL, 
+    staffID INTEGER references Hospitalstaff (userID) ON DELETE SET NULL, 
     dateOfAppt DATE NOT NULL, 
     status aptStatus DEFAULT 'ongoing'
 );
 
 CREATE TABLE BloodUnits (
-    unitID INTEGER PRIMARY KEY, 
+    unitID INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, 
     appointmentID INTEGER references Appointments (appointmentID) NOT NULL, 
     bloodType VARCHAR (4) DEFAULT NULL
         CHECK (bloodType IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')),
