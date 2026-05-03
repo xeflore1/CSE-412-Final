@@ -23,7 +23,7 @@ def get_db_conn():
         host="localhost",
         database="bloodbank_412_PROJECT",
         user="postgres",
-        password="Jfort1nite!",
+        password="cse412!",
         port="5432"
     )
     return conn
@@ -269,18 +269,19 @@ def get_appts(userId):
         res = cur.fetchall()
         cur.close()
         conn.close()
-        if not res:
-            return jsonify({"error": "Something went wrong"}), 401
 
-        return jsonify([
-             {
-            "appointmentID": appt[0],
-            "donorID": appt[1],
-            "staffID": appt[2],
-            "date": appt[3],
-            "status": appt[4],
-             } for appt in res
-        ])
+        appointments = [
+            {
+                "appointmentID": appt[0],
+                "donorID": appt[1],
+                "staffID": appt[2],
+                "date": appt[3],
+                "status": appt[4],
+            }
+            for appt in res
+        ]
+        return jsonify(appointments), 200
+
     except Exception as e:
         return jsonify({"error": "Issue with the server"}), 500
 
@@ -367,15 +368,33 @@ def update_appt(appointmentId):
         date = data.get("date")
         status = data.get("status")
 
+
+        valid_statuses = ("ongoing", "completed", "cancelled")
+        if status is not None and status not in valid_statuses:
+            return jsonify({"error": f"Invalid status. Must be one of: {valid_statuses}"}), 400
+
         conn = get_db_conn()
         cur = conn.cursor()
 
-        cur.execute("""
-            UPDATE appointments
-            SET dateofappt = %s,
-                status = %s
-            WHERE appointmentid = %s;
-        """, (date, status, appointmentId))
+        set_clauses = []
+        params = []
+        if date is not None:
+            set_clauses.append("dateofappt = %s")
+            params.append(date)
+        if status is not None:
+            set_clauses.append("status = %s")
+            params.append(status)
+
+        if not set_clauses:
+            return jsonify({"error": "No fields to update"}), 400
+
+        params.append(appointmentId)
+        query = f"UPDATE appointments SET {', '.join(set_clauses)} WHERE appointmentid = %s"
+        print(f"Executing: {query} with params {params}")  # DEBUG
+
+        cur.execute(query, params)
+        rowcount = cur.rowcount
+        print(f"Rows affected: {rowcount}")  # DEBUG
 
         conn.commit()
         cur.close()
@@ -384,6 +403,8 @@ def update_appt(appointmentId):
         return jsonify({"message": "Appointment updated"}), 200
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         if 'conn' in locals():
             conn.rollback()
             conn.close()
@@ -413,6 +434,56 @@ def delete_user(userId):
             conn.rollback()
             conn.close()
         return jsonify({"error": "Delete failed"}), 500
+
+@app.route("/appts", methods=["POST"])
+def create_appointment():
+    try:
+        data = request.get_json()
+        donor_id = data["donorId"]
+        date = data["date"]
+
+        conn = get_db_conn()
+        cur = conn.cursor()
+
+        # Find an available staff member (simple: assign one that has no ongoing appt at that date)
+        cur.execute("""
+            SELECT userid FROM hospitalstaff
+            WHERE userid NOT IN (
+                SELECT staffid FROM appointments
+                WHERE dateofappt = %s AND status = 'ongoing'
+            )
+            LIMIT 1;
+        """, (date,))
+        staff = cur.fetchone()
+        if not staff:
+            cur.close()
+            conn.close()
+            return jsonify({"error": "No staff available on this date"}), 409
+
+        staff_id = staff[0]
+
+        # Get the next appointment ID (since you're not using SERIAL)
+        cur.execute("SELECT COALESCE(MAX(appointmentid), 0) + 1 FROM appointments")
+        new_id = cur.fetchone()[0]
+
+        cur.execute(
+            "INSERT INTO appointments (appointmentid, donorid, staffid, dateofappt, status) VALUES (%s, %s, %s, %s, 'ongoing')",
+            (new_id, donor_id, staff_id, date)
+        )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({"appointmentId": new_id}), 201
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        if 'conn' in locals():
+            conn.rollback()
+            conn.close()
+        return jsonify({"error": "Appointment creation failed"}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)

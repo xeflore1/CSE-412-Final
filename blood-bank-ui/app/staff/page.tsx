@@ -15,6 +15,8 @@ export default function StaffPage() {
   const [jobTitle, setJobTitle] = useState("")
   const searchParams = useSearchParams();
   const userId = searchParams.get('data')
+  const [refreshCount, setRefreshCount] = useState(0);
+
 
   // initialize and display user details
   function UserDetails() {
@@ -44,70 +46,87 @@ export default function StaffPage() {
 
   // Initialize and display appointments
   // function to retrieve and display appointments
-  function ApptList() {
-    const [appts, setAppts] = useState<{ // defined what appts is here so that there's no warning msgs
-      appointmentID: number; donorID: number;
-      staffID: number, date: string; status: string;
-    }[]>([])
-    useEffect(() => {
-      // retrieve all appts using appts api
-      const fetchAppts = async () => {
-        try {
-          const res = await axios.get(`http://127.0.0.1:5000/appts/${userId}`);
-          setAppts(res.data);
-        } catch (err) {
-            console.error(err);
-        }
-      };
-      if (userId) fetchAppts();
-    }, [userId]);
-    return <div className="flex flex-col items-center justify-center gap-3">
+  function ApptList({ refreshTrigger }: { refreshTrigger: number }) {
+  const [appts, setAppts] = useState<{
+    appointmentID: number; donorID: number;
+    staffID: number; date: string; status: string;
+  }[]>([])
+
+  useEffect(() => {
+    const fetchAppts = async () => {
+      try {
+        const res = await axios.get(`http://127.0.0.1:5000/appts/${userId}`);
+        setAppts(res.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    if (userId) fetchAppts();
+  }, [userId, refreshTrigger]);
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-3">
       <h1 className="text-2xl font-bold dark:text-white">Appointments</h1>
       <ul>
         {appts.map((appt) => (
-          <li key = {appt.appointmentID}>
-             Appointment ID: {appt.appointmentID},
-             Donor ID {appt.donorID},
-             Staff ID {appt.staffID},
-             Date: {appt.date},
-             Status {appt.status}
+          <li key={appt.appointmentID}>
+            Appointment ID: {appt.appointmentID},
+            Donor ID {appt.donorID},
+            Staff ID {appt.staffID},
+            Date: {appt.date},
+            Status {appt.status}
           </li>
         ))}
       </ul>
     </div>
-  }
+  );
+}
+
+
 
   // Appt completer button
   function ApptComp() {
-    const handleAttpComp = async () =>
-    {
-      try {
-        await axios.put(`http://127.0.0.1:5000/appts/${appointmentID}`, {
-        status: "complete"
+  const handleAttpComp = async () => {
+    try {
+      await axios.put(`http://127.0.0.1:5000/appts/${appointmentID}`, {
+        status: "completed"
       });
       alert("Appointment marked complete");
-      } catch (err) {
-        console.error(err);
-      }
+      setRefreshCount(c => c + 1); 
+    } catch (err) {
+      console.error(err);
     }
-    return <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition" onClick={handleAttpComp}>Complete</button>
-  }
+  };
+  return (
+    <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition" onClick={handleAttpComp}>
+      Complete
+    </button>
+  );
+}
 
-  // Appt canceller button
-  function ApptCancel() {
-    const handleAttpCancel = async () =>
-    {
-      try {
-        await axios.put(`http://127.0.0.1:5000/appts/${appointmentID}`, {
-          status: "cancelled"
-        });
-        alert("Appointment cancelled");
-      } catch (err) {
-        console.error(err);
-      }
+
+// Appt canceller button
+function ApptCancel() {
+  const handleAttpCancel = async () => {
+    try {
+      await axios.put(`http://127.0.0.1:5000/appts/${appointmentID}`, {
+        status: "cancelled"
+      });
+      alert("Appointment cancelled");
+      setRefreshCount(c => c + 1); 
+    } catch (err) {
+      console.error(err);
     }
-    return <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition" onClick={handleAttpCancel}>Cancel</button>
-  }
+  };
+  return (
+    <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition" onClick={handleAttpCancel}>
+      Cancel
+    </button>
+  );
+}
+
+// When rendering ApptList, pass the refreshTrigger:
+<ApptList refreshTrigger={refreshCount} />
 
   // Blood checker button
   function FindBlood() {

@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
-// ---------------- Subcomponents (defined OUTSIDE) ----------------
+// ---------------- Subcomponents ----------------
 
 function Checkbox({ isStaff, setIsStaff }: { isStaff: boolean; setIsStaff: (v: boolean) => void }) {
   return (

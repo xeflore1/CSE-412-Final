@@ -76,29 +76,53 @@ export default function DonorPage() {
     </div>
   }
 
-  // Create Appointment form
-  function CreateAppointment() {
-    const [apptDate, setApptDate] = useState(""); // this will hold the date of the requested appointment
-    const handleApptCreate = () => {
-      // TODO: make a POST request to create an appointment
-      // apptDate contains the selected date value
-      console.log(apptDate)
-      // userId can be used to get the donors info
+function CreateAppointment() {
+  const [apptDate, setApptDate] = useState("");
+  const [message, setMessage] = useState(""); 
+
+  const handleApptCreate = async () => {
+    if (!apptDate) {
+      setMessage("Please select a date.");
+      return;
     }
-    return <div className="flex flex-col items-center justify-center gap-3">
+    setMessage("");
+
+    try {
+      const payload = {
+        donorId: userId,  
+        date: apptDate,
+      };
+      const res = await axios.post("http://127.0.0.1:5000/appts", payload);
+      if (res.status === 201) {
+        setMessage("Appointment created successfully!");
+      }
+    } catch (error: any) {
+      const errMsg = error.response?.data?.error || "Could not create appointment.";
+      setMessage(errMsg);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-3">
       <h1 className="text-2xl font-bold dark:text-white">Create Appointment</h1>
       <label>
         Enter date of requested appointment:
         <input
           type="date"
+          value={apptDate}
           onChange={(e) => setApptDate(e.target.value)}
         />
       </label>
-      <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition" onClick={handleApptCreate}>
+      <button
+        className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition"
+        onClick={handleApptCreate}
+      >
         Create Appointment
       </button>
+      {message && <p className="text-sm text-red-600">{message}</p>}
     </div>
-  }
+  );
+}
 
   // Button that redirects to update info page
   function UpdatePageButton() {
