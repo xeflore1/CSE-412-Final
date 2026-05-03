@@ -574,5 +574,43 @@ def create_blood_unit():
             conn.close()
         return jsonify({"error": "Failed to create blood unit"}), 500
 
+@app.route("/blood/<string:bloodType>", methods=["GET"])    
+def fetch_bloods(bloodType):
+    if bloodType not in ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']:
+        return jsonify({"error": "No blood of that type exists."}), 400
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor()
+        get_blood_query = '''
+            select 
+                appointmentid,
+                bloodtype, 
+                volume_ml, 
+                isavailable,
+                datedrawn,
+                notes
+            from bloodunits where bloodtype = %s;
+        '''
+        cur.execute(get_blood_query, (bloodType,)) 
+        res = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        bloods = [
+            {
+                "appointmentID": blood[0],
+                "bloodType": blood[1],
+                "volumeMl": blood[2],
+                "isAvailable": blood[3],
+                "dateDrawn": blood[4],
+                "notes": blood[5]
+            }
+            for blood in res
+        ]
+        return jsonify(bloods), 200
+
+    except Exception as e:
+        return jsonify({"error": "Issue with the server"}), 500
+
 if __name__ == "__main__":
     app.run(debug=True)

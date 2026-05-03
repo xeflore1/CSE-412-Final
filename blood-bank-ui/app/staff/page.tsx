@@ -140,32 +140,24 @@ function ApptCancel() {
 
   // Find and display all blood elements after blood type has been submitted
   function BloodList() {
-    const [bloodList, setBloodList] = useState([]);
+    const [bloodList, setBloodList] = useState<{
+      appointmentID: number; bloodType: string;
+      volumeMl: number; isAvailable: boolean; dateDrawn: string; notes : string
+    }[]>([])
 
     useEffect(() => {
       // TODO: a GET call is needed here to fill the following list with all the blood entries
       // 'bloodType' containes the blood type that needs to be searched
-      const tempList = [
-        {
-          appointmentID: 1,
-          bloodType: "A+",
-          volumeMl: 3,
-          isAvaible: "True",
-          dateDrawn: "4/30/26",
-          notes: "nott"
-        },
-        {
-          appointmentID: 2,
-          bloodType: "A-",
-          volumeMl: 30,
-          isAvaible: "False",
-          dateDrawn: "4/29/26",
-          notes: "nott2"
+      const fetchBloods = async () => {
+        try {
+          const res = await axios.get(`http://127.0.0.1:5000/blood/${bloodType}`);
+          setBloodList(res.data);
+        } catch (err) {
+          console.error(err);
         }
-      ];
-
-      setBloodList(tempList);
-    }, [bloodSubmit]);
+      };
+      if (bloodType) fetchBloods();
+    }, [bloodType, bloodSubmit]);
 
     return (
       <ul>
@@ -174,7 +166,7 @@ function ApptCancel() {
             ID: {blood.appointmentID},
             Blood Type: {blood.bloodType},
             Volume (ML): {blood.volumeMl},
-            Avaible: {blood.isAvaible},
+            Avaible: {blood.isAvailable},
             Date Drawn: {blood.dateDrawn},
             Notes: {blood.notes}
           </li>
