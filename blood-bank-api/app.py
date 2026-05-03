@@ -115,52 +115,66 @@ def health_check():
         return jsonify({"status": "ok", "database": "connected"}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+    
+
 @app.route("/login", methods=["POST"])
 def login():
-    '''
-    Attempts to make a login using the provided username and password.
-    :returns json: Returns data to the frontend in JSON format.
-    '''
     try:
         data = request.get_json()
         username = data["username"]
         password = data["password"]
 
-        #TODO hash the login input password before comparing it with tuples in the DB
-
-        # Validate user from frontend
         conn = get_db_conn()
         cur = conn.cursor()
-        get_user_query = '''
-            select 
+
+        # 1. Get hashed password and ids
+        cur.execute('''
+            SELECT 
                 users.userid, 
-                donors.userid as donorid, 
-                hospitalstaff.userid as staffid
-            from users
-            left join donors on donors.userid = users.userid
-            left join hospitalstaff on hospitalstaff.userid = users.userid
-            where username = %s and pw = %s; 
-        '''
-        cur.execute(get_user_query, (username, password)) 
+                users.pw,
+                donors.userid AS donorid, 
+                hospitalstaff.userid AS staffid
+            FROM users
+            LEFT JOIN donors ON donors.userid = users.userid
+            LEFT JOIN hospitalstaff ON hospitalstaff.userid = users.userid
+            WHERE username = %s;
+        ''', (username,))
         res = cur.fetchone()
         cur.close()
         conn.close()
 
-        # if no results, then return 401
         if not res:
             return jsonify({"error": "Invalid credentials"}), 401
-        
-        # if successful results, then return 200
-        user_id = res[0]
-        if res[1]: user_type = "Donor"
-        elif res[2]: user_type = "Staff"
+
+        user_id, hashed_pw, donor_id, staff_id = res
+
+        # 2. Verify password
+        try:
+            ph.verify(hashed_pw, password)
+        except VerifyMismatchError:
+            return jsonify({"error": "Invalid credentials"}), 401
+
+        # 3. Determine user type
+        if donor_id:
+            user_type = "Donor"
+        elif staff_id:
+            user_type = "Staff"
+        else:
+            # User exists but is neither donor nor staff (shouldn't happen in your schema)
+            return jsonify({"error": "User role not found"}), 500
+
         return jsonify({
             "userId": user_id,
             "userType": user_type
         }), 200
+
     except Exception as e:
-                return jsonify({"error": "Issue with the server"}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": "Issue with the server"}), 500
     
+
+
 @app.route("/donor/<int:userId>", methods=["GET"])
 def get_donor_info(userId):
     '''
