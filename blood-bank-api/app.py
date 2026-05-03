@@ -420,16 +420,12 @@ def update_appt(appointmentId):
                 )
                 blood_type = cur.fetchone()[0]
 
-                # Get next unit ID
-                cur.execute("SELECT COALESCE(MAX(unitid), 0) + 1 FROM bloodunits")
-                new_unit_id = cur.fetchone()[0]
-
                 # Insert blood unit
                 cur.execute(
                     """INSERT INTO bloodunits
-                       (unitid, appointmentid, bloodtype, volume_ml, isavailable, datedrawn)
-                       VALUES (%s, %s, %s, 500, TRUE, CURRENT_DATE)""",
-                    (new_unit_id, appointmentId, blood_type)
+                       (appointmentid, bloodtype, volume_ml, isavailable, datedrawn)
+                       VALUES (%s, %s, 500, TRUE, CURRENT_DATE)""",
+                    (appointmentId, blood_type)
                 )
 
         conn.commit()
