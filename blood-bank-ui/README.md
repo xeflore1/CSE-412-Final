@@ -2,7 +2,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, install deps
+First, install deps after cding into "blood-bank-ui"
 
 ```bash
 npm install react-router-dom axios
