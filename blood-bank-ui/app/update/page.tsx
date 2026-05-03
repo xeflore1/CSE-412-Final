@@ -143,24 +143,26 @@ export default function UpdateInfo() {
 
   // delete account button
   function DeleteUser() {
-    const router = useRouter()
-    
-    const handleSubmit = () => {
-      // TODO: perform DELETE to remove user
-      // you should be able to use 'userId' 
-      var response = 200
-      if (response == 200) // if account deleted successfully go back to landing page
-      {
-        router.push('/')
+    const handleSubmit = async () => {
+      setErrorMsg("");
+
+      try {
+        await axios.delete(`http://127.0.0.1:5000/user/${userId}`);
+        router.push("/");
+      } catch (err: any) {
+        const msg = err.response?.data?.error || "delete failed";
+        setErrorMsg(msg);
       }
-      else
-      {
-       setErrorMsg("delete failed") 
-      }
-    }
-    return <button className="px-4 py-2 bg-red-600 text-white rounded hover:bg-gray-700 transition" onClick={handleSubmit}>
-            Delete Account
-          </button>
+    };
+
+    return (
+      <button
+        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
+        onClick={handleSubmit}
+      >
+        Delete Account
+      </button>
+    );
   }
 
   // renders update form

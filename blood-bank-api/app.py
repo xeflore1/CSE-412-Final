@@ -414,28 +414,5 @@ def delete_user(userId):
             conn.close()
         return jsonify({"error": "Delete failed"}), 500
 
-@app.route("/appts/<int:appointmentId>", methods=["DELETE"])
-def delete_appt(appointmentId):
-    try:
-        conn = get_db_conn()
-        cur = conn.cursor()
-
-        cur.execute("""
-            DELETE FROM appointments
-            WHERE appointmentid = %s;
-        """, (appointmentId,))
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
-        return jsonify({"message": "Appointment deleted"}), 200
-
-    except Exception as e:
-        if 'conn' in locals():
-            conn.rollback()
-            conn.close()
-        return jsonify({"error": "Delete failed"}), 500    
-
 if __name__ == "__main__":
     app.run(debug=True)
