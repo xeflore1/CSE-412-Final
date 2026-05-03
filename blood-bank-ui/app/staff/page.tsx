@@ -79,20 +79,32 @@ export default function StaffPage() {
 
   // Appt completer button
   function ApptComp() {
-    const handleAttpComp = () =>
+    const handleAttpComp = async () =>
     {
-      // TODO: perform an UPDATE on Appointments table, given the appointmentID, change the corresponding appointment status to "complete"
-      console.log(appointmentID)
+      try {
+        await axios.put(`http://127.0.0.1:5000/appts/${appointmentID}`, {
+        status: "complete"
+      });
+      alert("Appointment marked complete");
+      } catch (err) {
+        console.error(err);
+      }
     }
     return <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition" onClick={handleAttpComp}>Complete</button>
   }
 
   // Appt canceller button
   function ApptCancel() {
-    const handleAttpCancel = () =>
+    const handleAttpCancel = async () =>
     {
-      // TODO: perform an UPDATE on Appointments table, given the appointmentID, change the corresponding appointment status to "cancelled"
-      console.log(appointmentID)
+      try {
+        await axios.put(`http://127.0.0.1:5000/appts/${appointmentID}`, {
+          status: "cancelled"
+        });
+        alert("Appointment cancelled");
+      } catch (err) {
+        console.error(err);
+      }
     }
     return <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition" onClick={handleAttpCancel}>Cancel</button>
   }
@@ -171,7 +183,7 @@ export default function StaffPage() {
       {/* Appointment Completer */}
       <h1 className="text-2xl font-bold dark:text-white">Appointment Updater: input appointment ID to complete it</h1>
       <div className="flex items-center justify-center gap-4">
-        <input className="text-center border-2 border-blue-600 rounded" type="number" placeholder="Appt ID" onChange={(e) => setAppointmentId(e.target.value)}></input>
+        <input className="text-center border-2 border-blue-600 rounded" type="number" placeholder="Appt ID" onChange={(e) => setAppointmentId(Number(e.target.value))}></input>
         <ApptComp />
         <ApptCancel />
       </div>

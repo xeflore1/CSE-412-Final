@@ -7,6 +7,7 @@ First, install deps after cding into "blood-bank-ui"
 ```bash
 npm install react-router-dom axios
 ```
+"Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass" first if running scripts is disabled
 
 run the development server:
 

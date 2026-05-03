@@ -23,7 +23,7 @@ def get_db_conn():
         host="localhost",
         database="bloodbank_412_PROJECT",
         user="postgres",
-        password="cse412",
+        password="Jfort1nite!",
         port="5432"
     )
     return conn
@@ -283,7 +283,159 @@ def get_appts(userId):
         ])
     except Exception as e:
         return jsonify({"error": "Issue with the server"}), 500
-    
+
+@app.route("/donor/<int:userId>", methods=["PUT"])
+def update_donor(userId):
+    try:
+        data = request.get_json()
+        username = data.get("username")
+        email = data.get("email")
+        blood_type = data.get("bloodType")
+        dob = data.get("dob")
+
+        conn = get_db_conn()
+        cur = conn.cursor()
+
+        # Update users table
+        cur.execute("""
+            UPDATE users
+            SET username = %s,
+                email = %s
+            WHERE userid = %s;
+        """, (username, email, userId))
+
+        # Update donors table
+        cur.execute("""
+            UPDATE donors
+            SET bloodtype = %s,
+                dob = %s
+            WHERE userid = %s;
+        """, (blood_type, dob, userId))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({"message": "Donor updated successfully"}), 200
+
+    except Exception as e:
+        if 'conn' in locals():
+            conn.rollback()
+            conn.close()
+        return jsonify({"error": "Update failed"}), 500
+
+@app.route("/staff/<int:userId>", methods=["PUT"])
+def update_staff(userId):
+    try:
+        data = request.get_json()
+        username = data.get("username")
+        email = data.get("email")
+        job_title = data.get("jobTitle")
+
+        conn = get_db_conn()
+        cur = conn.cursor()
+
+        cur.execute("""
+            UPDATE users
+            SET username = %s,
+                email = %s
+            WHERE userid = %s;
+        """, (username, email, userId))
+
+        cur.execute("""
+            UPDATE hospitalstaff
+            SET jobtitle = %s
+            WHERE userid = %s;
+        """, (job_title, userId))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({"message": "Staff updated successfully"}), 200
+
+    except Exception as e:
+        if 'conn' in locals():
+            conn.rollback()
+            conn.close()
+        return jsonify({"error": "Update failed"}), 500
+
+@app.route("/appts/<int:appointmentId>", methods=["PUT"])
+def update_appt(appointmentId):
+    try:
+        data = request.get_json()
+        date = data.get("date")
+        status = data.get("status")
+
+        conn = get_db_conn()
+        cur = conn.cursor()
+
+        cur.execute("""
+            UPDATE appointments
+            SET dateofappt = %s,
+                status = %s
+            WHERE appointmentid = %s;
+        """, (date, status, appointmentId))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({"message": "Appointment updated"}), 200
+
+    except Exception as e:
+        if 'conn' in locals():
+            conn.rollback()
+            conn.close()
+        return jsonify({"error": "Update failed"}), 500
+
+@app.route("/user/<int:userId>", methods=["DELETE"])
+def delete_user(userId):
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor()
+
+        # Delete dependent records first
+        cur.execute("DELETE FROM donors WHERE userid = %s;", (userId,))
+        cur.execute("DELETE FROM hospitalstaff WHERE userid = %s;", (userId,))
+
+        # Then delete user
+        cur.execute("DELETE FROM users WHERE userid = %s;", (userId,))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({"message": "User deleted"}), 200
+
+    except Exception as e:
+        if 'conn' in locals():
+            conn.rollback()
+            conn.close()
+        return jsonify({"error": "Delete failed"}), 500
+
+@app.route("/appts/<int:appointmentId>", methods=["DELETE"])
+def delete_appt(appointmentId):
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor()
+
+        cur.execute("""
+            DELETE FROM appointments
+            WHERE appointmentid = %s;
+        """, (appointmentId,))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({"message": "Appointment deleted"}), 200
+
+    except Exception as e:
+        if 'conn' in locals():
+            conn.rollback()
+            conn.close()
+        return jsonify({"error": "Delete failed"}), 500    
 
 if __name__ == "__main__":
     app.run(debug=True)
