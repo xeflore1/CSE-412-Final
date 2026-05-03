@@ -141,6 +141,28 @@ export default function UpdateInfo() {
           </button>
   }
 
+  // delete account button
+  function DeleteUser() {
+    const router = useRouter()
+    
+    const handleSubmit = () => {
+      // TODO: perform DELETE to remove user
+      // you should be able to use 'userId' 
+      var response = 200
+      if (response == 200) // if account deleted successfully go back to landing page
+      {
+        router.push('/')
+      }
+      else
+      {
+       setErrorMsg("delete failed") 
+      }
+    }
+    return <button className="px-4 py-2 bg-red-600 text-white rounded hover:bg-gray-700 transition" onClick={handleSubmit}>
+            Delete Account
+          </button>
+  }
+
   // renders update form
   function UpdateStaff() {
 
@@ -164,6 +186,7 @@ export default function UpdateInfo() {
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black gap-3">
       <UpdateStaff />
+      <DeleteUser />
       <Link href="/">
         <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition">
           Back
