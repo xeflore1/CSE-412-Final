@@ -1,4 +1,5 @@
 'use client';
+import axios from "axios"; 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -16,12 +17,21 @@ export default function StaffPage() {
   // initialize and display user details
   function UserDetails() {
     useEffect(() => {
-      // TODO: utalize the userId to perform a GET call on the Users/Donors table to fill out the following:
-      setUsername("defUser")
-      setEmail("defEmail")
-      setJobTitle("defJob")
-  
-    }, []);
+      // Call the get donor info api
+      const fetchUser = async () => {
+        try {
+          const res = await axios.get(`http://127.0.0.1:5000/staff/${userId}`);
+          
+          setUsername(res.data.username);
+          setEmail(res.data.email);
+          setJobTitle(res.data.jobTitle);
+
+        } catch (err) {
+          console.error(err);
+        }
+      };
+      if (userId) fetchUser();
+    }, [userId]);
     return <div>
       <p className="dark:text-gray-300">User Id: {userId}</p>
       <p className="dark:text-gray-300">Username: {username}</p>
@@ -31,44 +41,38 @@ export default function StaffPage() {
   }
 
   // Initialize and display appointments
+  // function to retrieve and display appointments
   function ApptList() {
-    const [apptList, setAppList] = useState([]);
-
+    const [appts, setAppts] = useState<{ // defined what appts is here so that there's no warning msgs
+      appointmentID: number; donorID: number;
+      staffID: number, date: string; status: string;
+    }[]>([])
     useEffect(() => {
-      // TODO: a GET call is needed here to fill the following list with all the staff's appointments
-      const tempList = [
-        {
-          appointmentID: 1,
-          donorId: 2,
-          staffId: 3,
-          date: "04/30/26",
-          status: "ongoing"
-        },
-        {
-          appointmentID: 2,
-          donorId: 3,
-          staffId: 4,
-          date: "04/29/26",
-          status: "completed"
+      // retrieve all appts using appts api
+      const fetchAppts = async () => {
+        try {
+          const res = await axios.get(`http://127.0.0.1:5000/appts/${userId}`);
+          setAppts(res.data);
+        } catch (err) {
+            console.error(err);
         }
-      ];
-
-      setAppList(tempList);
-    }, [appointmentID]);
-
-    return (
+      };
+      if (userId) fetchAppts();
+    }, [userId]);
+    return <div className="flex flex-col items-center justify-center gap-3">
+      <h1 className="text-2xl font-bold dark:text-white">Appointments</h1>
       <ul>
-        {apptList.map((appt) => (
-          <li key={appt.appointmentID}>
-            ID: {appt.appointmentID},
-            Donor ID: {appt.donorId},
-            Staff ID: {appt.staffId},
-            Date: {appt.date},
-            Status: {appt.status}
+        {appts.map((appt) => (
+          <li key = {appt.appointmentID}>
+             Appointment ID: {appt.appointmentID},
+             Donor ID {appt.donorID},
+             Staff ID {appt.staffID},
+             Date: {appt.date},
+             Status {appt.status}
           </li>
         ))}
       </ul>
-    );
+    </div>
   }
 
   // Appt completer button

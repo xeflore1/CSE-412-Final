@@ -42,22 +42,30 @@ export default function DonorPage() {
 
   // function to retrieve and display appointments
   function ApptList() {
-    const [appts, setAppts] = useState([])
+    const [appts, setAppts] = useState<{ // defined what appts is here so that there's no warning msgs
+      appointmentID: number; donorID: number;
+      staffID: number, date: string; status: string;
+    }[]>([])
     useEffect(() => {
-      // TODO: similarly, perform a GET call to retrieve all appointments the user has, store the results in the following list
-      setAppts([
-        { appointmentID: 1, donorId: 2, staffId: 3, date: "04/30/25", status: "ongoing"},
-        { appointmentID: 2, donorId: 3, staffId: 4, date: "04/29/26", status: "completed"}
-      ])
-    }, []);
+      // retrieve all appts using appts api
+      const fetchAppts = async () => {
+        try {
+          const res = await axios.get(`http://127.0.0.1:5000/appts/${userId}`);
+          setAppts(res.data);
+        } catch (err) {
+            console.error(err);
+        }
+      };
+      if (userId) fetchAppts();
+    }, [userId]);
     return <div className="flex flex-col items-center justify-center gap-3">
       <h1 className="text-2xl font-bold dark:text-white">Appointments</h1>
       <ul>
         {appts.map((appt) => (
           <li key = {appt.appointmentID}>
-            ID: {appt.appointmentID},
-             Donor ID {appt.donorId},
-             Staff ID {appt.staffId},
+             Appointment ID: {appt.appointmentID},
+             Donor ID {appt.donorID},
+             Staff ID {appt.staffID},
              Date: {appt.date},
              Status {appt.status}
           </li>

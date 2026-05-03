@@ -27,6 +27,10 @@ def get_db_conn():
 
 @app.route("/login", methods=["POST"])
 def login():
+    '''
+    Attempts to make a login using the provided username and password.
+    :returns json: Returns data to the frontend in JSON format.
+    '''
     try:
         data = request.get_json()
         username = data["username"]
@@ -69,6 +73,11 @@ def login():
     
 @app.route("/donor/<int:userId>", methods=["GET"])
 def get_donor_info(userId):
+    '''
+    Gets the user info for donors, i.e. their username, email, bloodtype, and dob.
+    :parameter userId: the specific userId we are getting info for
+    :returns json: Returns data to the frontend in JSON format.
+    '''
     try:
         conn = get_db_conn()
         cur = conn.cursor()
@@ -87,7 +96,7 @@ def get_donor_info(userId):
         cur.close()
         conn.close()
         if not res:
-            return jsonify({"error": "Invalid credentials"}), 401
+            return jsonify({"error": "Something went wrong"}), 401
 
         return jsonify({
             "username": res[0],
@@ -97,6 +106,80 @@ def get_donor_info(userId):
         })
     except Exception as e:
         return jsonify({"error": "Issue with the server"}), 500
+    
+@app.route("/staff/<int:userId>", methods=["GET"])
+def get_staff_info(userId):
+    '''
+    Gets the user info for staff, i.e. their username, email, job position.
+    :parameter userId: the specific userId we are getting info for
+    :returns json: Returns data to the frontend in JSON format.
+    '''
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor()
+        get_staff_info_query = '''
+            select
+                username,
+                email,
+                jobtitle
+            from users
+            join hospitalstaff on hospitalstaff.userid = users.userid
+            where users.userid = %s;
+        '''
+        cur.execute(get_staff_info_query, (userId,)) 
+        res = cur.fetchone()
+        cur.close()
+        conn.close()
+        if not res:
+            return jsonify({"error": "Something went wrong"}), 401
+
+        return jsonify({
+            "username": res[0],
+            "email": res[1],
+            "jobTitle": res[2]
+        })
+    except Exception as e:
+        return jsonify({"error": "Issue with the server"}), 500
+
+@app.route("/appts/<int:userId>", methods=["GET"])
+def get_appts(userId):
+    '''
+    Gets the appointments for this given user.
+    :parameter userId: the specific userId we are getting appointments for.
+    :returns json: Returns data to the frontend in JSON format.
+    '''
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor()
+        get_appts_info_query = '''
+            select 
+                appointmentid, 
+                donorid, 
+                staffid, 
+                dateofappt, 
+                status
+            from appointments where donorid = %s or staffid = %s
+            order by status desc;
+        '''
+        cur.execute(get_appts_info_query, (userId, userId)) 
+        res = cur.fetchall()
+        cur.close()
+        conn.close()
+        if not res:
+            return jsonify({"error": "Something went wrong"}), 401
+
+        return jsonify([
+             {
+            "appointmentID": appt[0],
+            "donorID": appt[1],
+            "staffID": appt[2],
+            "date": appt[3],
+            "status": appt[4],
+             } for appt in res
+        ])
+    except Exception as e:
+        return jsonify({"error": "Issue with the server"}), 500
+    
 
 if __name__ == "__main__":
     app.run(debug=True)
