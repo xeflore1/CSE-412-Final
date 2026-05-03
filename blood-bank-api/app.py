@@ -1,9 +1,13 @@
+# blood-bank-api/app.py
+
 # soon to be backend
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-#from argon2 import PasswordHasher
+from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
 import psycopg2
 
+ph = PasswordHasher()
 app = Flask(__name__)
 CORS(app)
 
@@ -25,6 +29,92 @@ def get_db_conn():
     return conn
 
 
+# Register user
+@app.route("/register", methods=["POST"])
+def register():
+    try:
+        data = request.get_json()
+        email = data.get("email", "").strip()
+        username = data.get("username", "").strip()
+        password = data.get("password", "")
+        is_staff = data.get("isStaff", False)
+
+        blood_type = data.get("bloodType")
+        dob = data.get("dob")
+        job_title = data.get("jobTitle")
+
+        # --- Basic validation ---
+        if not email or not username or not password:
+            return jsonify({"error": "Email, username, and password are required."}), 400
+
+        if not is_staff:
+            if not blood_type or not dob:
+                return jsonify({"error": "Blood type and date of birth are required for donors."}), 400
+        else:
+            if not job_title:
+                return jsonify({"error": "Job title is required for staff."}), 400
+
+        # Hash the password 
+        hashed_pw =  ph.hash(password)
+
+        conn = get_db_conn()
+        cur = conn.cursor()
+
+        # Check if username or email already exists
+        cur.execute("SELECT userid FROM users WHERE username = %s OR email = %s", (username, email))
+        existing = cur.fetchone()
+        if existing:
+            cur.close()
+            conn.close()
+            return jsonify({"error": "Username or email already taken."}), 409
+
+        insert_user_query = """
+            INSERT INTO users (username, pw, email)
+            VALUES (%s, %s, %s)
+            RETURNING userid;
+        """
+        cur.execute(insert_user_query, (username, hashed_pw, email))
+        user_id = cur.fetchone()[0]
+
+        if is_staff:
+            cur.execute(
+                "INSERT INTO hospitalstaff (userid, jobtitle) VALUES (%s, %s)",
+                (user_id, job_title)
+            )
+            user_type = "Staff"
+        else:
+            cur.execute(
+                "INSERT INTO donors (userid, bloodtype, dob) VALUES (%s, %s, %s)",
+                (user_id, blood_type, dob)
+            )
+            user_type = "Donor"
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({"userId": user_id, "userType": user_type}), 201
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()   # will show the error in terminal
+        if 'conn' in locals():
+            conn.rollback()
+            conn.close()
+        return jsonify({"error": "Registration failed. Please try again."}), 500
+
+# Test Database Connection
+@app.route("/health", methods=["GET"])
+def health_check():
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor()
+        cur.execute("SELECT 1;")
+        cur.close()
+        conn.close()
+        return jsonify({"status": "ok", "database": "connected"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 @app.route("/login", methods=["POST"])
 def login():
     '''

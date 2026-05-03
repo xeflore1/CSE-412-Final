@@ -1,8 +1,13 @@
+// blood-bank-ui/app/create
+
 'use client'
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import DonorPage from "../donor/page";
+import axios from "axios"; 
+
+
 
 export default function CreateUser() {
   const [email, setEmail] = useState("")
@@ -25,35 +30,52 @@ export default function CreateUser() {
     </div>
   }
 
-  // function for create user submission
   function Submit() {
-    const router = useRouter()
-    const handleSubmit = () => {
-      // TODO: do POST request to create new user with the following params
-      // email
-      // username
-      // password
-      if (isStaff) // staff member
-      {
-        // jobTitle
-      }
-      else // donor
-      {
-        // bloodType, dob
-      }
-      const responseCode = 200
-      if (responseCode === 200)
-      {
-        router.push('/')
-      }
-      else {
-        setErrorMsg("Wrong, do it again")
-      }
+  const router = useRouter();
+
+  const handleSubmit = async () => {
+    // Clear previous error
+    setErrorMsg("");
+
+    // Build the payload
+    const payload: any = {
+      email,
+      username,
+      password,
+      isStaff,
+    };
+
+    if (isStaff) {
+      payload.jobTitle = jobTitle;   // make sure state variable name matches
+    } else {
+      payload.bloodType = bloodType;
+      payload.dob = dob;
     }
-    return <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition" onClick={handleSubmit}>
-            Submit
-          </button>
-  }
+    if (!isStaff && !dob) {
+      setErrorMsg("Please select your date of birth.");
+      return;
+    }
+    try {
+      const response = await axios.post("http://127.0.0.1:5000/register", payload);
+      if (response.status === 201) {
+        // Registration successful – redirect to login
+        router.push("/");
+      }
+    } catch (error: any) {
+      const message = error.response?.data?.error || "Registration failed";
+      setErrorMsg(message);
+    }
+  };
+
+  return (
+    <button
+      className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition"
+      onClick={handleSubmit}
+    >
+      Submit
+    </button>
+  );
+}
 
   // function to create dropdown for blood type
   function BloodDropdown() {
